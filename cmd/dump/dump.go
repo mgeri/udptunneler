@@ -1,16 +1,10 @@
 package dump
 
 import (
-	"bufio"
-	"github.com/bytedance/gopkg/lang/mcache"
 	constants "github.com/mgeri/udptunneler/pkg"
-	"github.com/mgeri/udptunneler/pkg/frame"
-	"github.com/mgeri/udptunneler/pkg/packet"
 	"github.com/mgeri/udptunneler/pkg/util"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/ipv4"
-	"time"
-
 	"log"
 	"net"
 	"strings"
@@ -98,69 +92,5 @@ func dump(cmd *cobra.Command, args []string) error {
 		log.Printf(strings.Repeat("-", 80))
 		log.Printf("addr: %v, numBytes: %d\n", srcAddr, numBytes)
 		util.DumpByteSlice(buffer[:numBytes])
-	}
-}
-
-func handleServerConnection(conn net.Conn, in <-chan *packet.Datagram) {
-	timer := time.NewTicker(time.Second * constants.DefaultHeartbeatTimeout / 2)
-
-	go handleServerResponse(conn)
-
-	frameCodec := frame.NewFrameCodec()
-	wbuf := bufio.NewWriter(conn)
-
-	heartbeatBuffer := make([]byte, packet.HeartbeatPacketHeaderLen)
-	p := packet.Heartbeat{}
-	p.Encode(heartbeatBuffer)
-
-	for {
-		select {
-		case <-timer.C:
-			err := frameCodec.Encode(wbuf, heartbeatBuffer)
-			if err != nil {
-				log.Fatalf("write error while sending heartbeat: %v", err)
-				return
-			}
-		case data := <-in:
-			// unwrap buffer from packet to avoid encoding it (is already ready to be sent except for the header)
-			buffer := data.DatagramPacket
-			data.DatagramPacket = nil
-			data.Encode(buffer)
-			err := frameCodec.Encode(wbuf, buffer[:packet.DatagramPacketHeaderLen+data.DatagramLength])
-			mcache.Free(buffer)
-			if err != nil {
-				log.Fatalf("write error while sending datagram: %v", err)
-				return
-			}
-			err = wbuf.Flush()
-			if err != nil {
-				log.Fatalf("write error while flushing: %v", err)
-				return
-			}
-		}
-	}
-}
-
-func handleServerResponse(conn net.Conn) {
-	frameCodec := frame.NewFrameCodec()
-	rbuf := bufio.NewReader(conn)
-	for {
-		framePayload, err := frameCodec.Decode(rbuf)
-		if err != nil {
-			log.Fatalf("read error: %v", err)
-			return
-		}
-		p, err := packet.Decode(framePayload)
-		if err != nil {
-			log.Fatalf("handleConn: packet decode error: %v", err)
-			return
-		}
-		switch p.(type) {
-		case *packet.Heartbeat:
-			log.Printf("heartbeat received")
-		default:
-			log.Fatalf("unknown packet received: %v", p)
-		}
-		mcache.Free(framePayload)
 	}
 }
