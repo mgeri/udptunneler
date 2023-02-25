@@ -3,12 +3,12 @@
 A simple UDP tunneling tool to forward UDP multicast traffic through a TCP connection (aka tunnel), written in Go.
 
 ## How it works
-The purpose of the `udotunneler` is to transfer udp multicast data between two different network when that multicast channel is not available.
+The purpose of the `udotunneler` is to transfer udp multicast data between two different network when that multicast traffic is not allowed.
 
 A typical use case is when you have a multicast channel available in your lan, and you want to access it from a remote location,
 for example through a VPN connection where the multicast traffic is not allowed.
 
-The `udptunnel` is composed of two parts: the client and the server.</b>
+The `udptunneler` is composed of two parts: the client and the server.</b>
 The client joins a multicast group and forwards the received datagrams to the server, which in turns multicasts them on its own subnet.
 
 ## Build
