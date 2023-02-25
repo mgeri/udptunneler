@@ -1,0 +1,33 @@
+name: Release
+on:
+  push:
+    tags:
+    - 'v*.*.*'
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG_NAME: ${{ github.event.release.tag_name }}
+      GIT_BRANCH: ${{ github.ref_name }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Get version from tag
+      id: get_version
+      uses: battila7/get-version-action@v2
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.19'
+    - name: Build
+      run: VERSION=${{ steps.get_version.outputs.version-without-v }} make build_all
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+          files: |
+            bin/udptunneler-linux-amd64
+            bin/udptunneler-windows-amd64
+          body: |
+            Release binaries for ${{ steps.get_version.outputs.version-without-v }}
+
