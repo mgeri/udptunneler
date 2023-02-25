@@ -28,7 +28,7 @@ VERSION=0.0.1 make clean build_all
 
 See the makefile for details.
 
-You can download the current binaries from the [release page].
+You can download the current binaries from [releases](https://github.com/mgeri/udptunneler/releases).
 
 ## Usage
 In order to use the `udptunneler` you need to start the server side first, then the client side.
